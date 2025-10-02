@@ -6,232 +6,18 @@
 #include <string>
 #include <utility>
 #include <cctype>
-
-int colLetterToNumber(const std::string &col)
-{
-    int result = 0;
-    for (char c : col)
-    {
-        if (!std::isalpha(c))
-            continue; // skip non-letters if you want safety
-        char upper = std::toupper(c);
-        int digit = (upper - 'A' + 1); // A=1, B=2, ..., Z=26
-        result = result * 26 + digit;
-    }
-    return result;
-}
-
-// Add,
-//     Sub,
-//     Mul,
-//     Div,
-//     Pow,
-//     Less,
-//     Greater,
-//     Eq,
-//     Neq,
-//     Leq,
-//     Geq,
-//     Range,  // :
-//     Concat, // &
-
-enum TOKEN_TYPE
-{
-    REFERENCE_TOKEN,
-    NUMBER_TOKEN,
-    STRING_TOKEN,
-    COMMA_TOKEN,
-    ADD_OPERATOR_TOKEN,
-    SUB_OPERATOR_TOKEN,
-    MULT_OPERATOR_TOKEN,
-    DIV_OPERATOR_TOKEN,
-    POW_OPERATOR_TOKEN,
-    LESS_OPERATOR_TOKEN,
-    GREATER_OPERATOR_TOKEN,
-    EQ_OPERATOR_TOKEN,
-    NEQ_OPERATOR_TOKEN,
-    GEQ_OPERATOR_TOKEN,
-    LEQ_OPERATOR_TOKEN,
-    RANGE_OPERATOR_TOKEN,
-    CONCAT_OPERATOR_TOKEN,
-    PERCENT_OPERATOR_TOKEN,
-    IDENT_TOKEN,
-    LPAREN_TOKEN, // done
-    RPAREN_TOKEN, // done
-};
+#include "GPFETypes.h"
+#include "Parser.h"
+#include <format>
 
 // need literal, function call, operator, reference
 
-enum class LiteralType
-{
-    String,
-    Numeric,
-};
-
-enum class UnaryOp
-{
-    Plus,    // +x
-    Minus,   // -x
-    Percent, // x%
-};
-
-enum class BinaryOp
-{
-    Add,
-    Sub,
-    Mul,
-    Div,
-    Pow,
-    Less,
-    Greater,
-    Eq,
-    Neq,
-    Leq,
-    Geq,
-    Range,  // :
-    Concat, // &
-};
-
-enum class ReferenceType
-{
-    Cell,
-    Range,
-};
-
-enum class ASTNodeType
-{
-    Literal,
-    Reference,
-    Unary,
-    Binary,
-    FunctionCall,
-};
-
-// === Leaf payloads ===
-struct Literal
-{
-    LiteralType type;
-    std::variant<std::string, double> value;
-};
-
-struct CellReference
-{
-    int row;
-    int col;
-    // add absolute flags later if needed
-};
-
-struct RangeReference
-{
-    int top;
-    int left;
-    int bottom;
-    int right;
-};
-
-struct Reference
-{
-    ReferenceType type;
-    std::variant<CellReference, RangeReference> ref;
-};
-
-struct ASTNode;
-
-struct UnaryOperation
-{
-    UnaryOp op;
-    ASTNode *operand;
-};
-
-struct BinaryOperation
-{
-    BinaryOp op;
-    ASTNode *left;
-    ASTNode *right;
-};
-
-struct FunctionCall
-{
-    std::string identifier;
-    std::vector<ASTNode *> args;
-};
-
-struct ASTNode
-{
-    ASTNodeType type;
-    std::variant<Literal, Reference, UnaryOperation, BinaryOperation, FunctionCall> node;
-};
-
-struct Token
-{
-    TOKEN_TYPE type;
-    std::string token_type_string;
-    std::string token;
-};
-
-ASTNode nud(Token token)
-{
-    ASTNode node;
-    Literal lit;
-    Reference ref;
-    CellReference cell_ref;
-    std::string cell_ref_letters;
-    int cell_ref_numbers = 0;
-    switch (token.type)
-    {
-    case NUMBER_TOKEN:
-        lit.type = LiteralType::Numeric;
-        lit.value = std::stod(token.token);
-        node.type = ASTNodeType::Literal;
-        node.node = std::move(lit);
-        return node;
-    case STRING_TOKEN:
-        lit.type = LiteralType::String;
-        lit.value = std::move(token.token);
-        node.type = ASTNodeType::Literal;
-        node.node = std::move(lit);
-        return node;
-    case REFERENCE_TOKEN:
-        ref.type = ReferenceType::Cell;
-
-        for (int i = 0; i < token.token.size(); i++)
-        {
-            // 0 shouldn't be allowed in cell ref but this logic clips it
-            if (isdigit(token.token[i]))
-            {
-                cell_ref_numbers *= 10;
-                cell_ref_letters += std::stoi("" + token.token[i]);
-            }
-            else
-            {
-                cell_ref_letters.push_back(token.token[i]);
-            }
-        }
-        cell_ref.row = cell_ref_numbers;
-        cell_ref.col = colLetterToNumber(cell_ref_letters);
-        ref.ref = std::move(cell_ref);
-        node.type = ASTNodeType::Reference;
-        node.node = std::move(ref);
-    case LPAREN_TOKEN:
-        static_assert(1 == 2);
-        // continue parsing
-    case ADD_OPERATOR_TOKEN:
-        static_assert(1 == 2);
-        // parse next sub expression and wrap
-    case SUB_OPERATOR_TOKEN:
-        static_assert(1 == 2);
-        // parse next sub expression and wrap
-    default:
-        throw std::runtime_error("PARSING ERROR");
-    }
-}
-
-std::string valid_after_number = ",)+-/*^%";
+std::string valid_after_number = ",)+-/*^%&";
 // : is not included below because we won't reach that branch with a cell ref
 std::string valid_after_indentifier = ",()+-/*^:";
 std::string valid_after_reference = ",:)+-/*^>=<";
-std::string operators = "+-/*^:";
-std::string binary_math_operators = "/*^&";
+std::string operators = "+-/*^:&";
+std::string binary_math_operators = "/*^";
 std::string comparison_operators = "<=>=<>";
 
 // scan based tokenizer
@@ -476,13 +262,20 @@ std::vector<Token> tokenize(std::string input)
                 case '^':
                     tokens.push_back({POW_OPERATOR_TOKEN, "POW OPERATOR", token});
                     break;
-                case '&':
-                    tokens.push_back({CONCAT_OPERATOR_TOKEN, "CONCAT OPERATOR", token});
-                    break;
                 }
             }
             else
             {
+                if (input[i] == '&')
+                {
+                    if (!tokens.size())
+                        throw std::runtime_error("CONCAT OPERATOR MUST HAVE LEFT OPERAND");
+                    if (tokens[tokens.size() - 1].type != NUMBER_TOKEN && tokens[tokens.size() - 1].type != REFERENCE_TOKEN && tokens[tokens.size() - 1].type != RPAREN_TOKEN && tokens[tokens.size() - 1].type != STRING_TOKEN)
+                        throw std::runtime_error("INVALID LEFT OPERATOR FOR CONCAT OPERATION");
+                    std::string token;
+                    token.push_back(input[i]);
+                    tokens.push_back({CONCAT_OPERATOR_TOKEN, "CONCAT OPERATOR", token});
+                }
                 if (input[i] == ':')
                 {
                     if (!tokens.size())
@@ -581,55 +374,69 @@ std::vector<Token> tokenize(std::string input)
             }
         }
     }
+    tokens.push_back({EOF_TOKEN, "EOF", "EOF"});
     return tokens;
 }
 
-int operator_precendence(TOKEN_TYPE t)
-{
-    switch (t)
-    {
-    case PERCENT_OPERATOR_TOKEN:
-        return 100;
-    case POW_OPERATOR_TOKEN:
-        return 90;
-    case MULT_OPERATOR_TOKEN:
-        return 80;
-    case DIV_OPERATOR_TOKEN:
-        return 80;
-    case ADD_OPERATOR_TOKEN:
-        return 70;
-    case SUB_OPERATOR_TOKEN:
-        return 70;
-    case CONCAT_OPERATOR_TOKEN:
-        return 60;
-    case LESS_OPERATOR_TOKEN:
-        return 50;
-    case GREATER_OPERATOR_TOKEN:
-        return 50;
-    case GEQ_OPERATOR_TOKEN:
-        return 50;
-    case LEQ_OPERATOR_TOKEN:
-        return 50;
-    case EQ_OPERATOR_TOKEN:
-        return 50;
-    case NEQ_OPERATOR_TOKEN:
-        return 50;
-    case RANGE_OPERATOR_TOKEN:
-        return 40;
-    }
-    return 0;
-}
+// function print_ast(node, indent):
+//     pad = " " * indent
+//     if node is Literal:
+//         print(pad + "Literal(" + value + ")")
+//     elif node is Reference:
+//         print(pad + "Reference(" + cell + ")")
+//     elif node is Unary:
+//         print(pad + "Unary(" + op + ")")
+//         print_ast(node.operand, indent + 2)
+//     elif node is Binary:
+//         print(pad + "Binary(" + op + ")")
+//         print_ast(node.left, indent + 2)
+//         print_ast(node.right, indent + 2)
+//     elif node is FunctionCall:
+//         print(pad + "Function(" + name + ")")
+//         for arg in node.args:
+//             print_ast(arg, indent + 2)
 
-ASTNode parse(std::vector<Token> &tokens)
+void print_ast(ASTNode *node, int indent)
 {
+    std::string padding;
+    for (int i = 0; i < indent; i++)
+    {
+        padding.push_back(' ');
+    }
+    switch (node->type)
+    {
+    case ASTNodeType::Literal:
+    {
+        const auto &lit = std::get<Literal>(node->node);
+        if (lit.type == LiteralType::Numeric)
+        {
+            std::cout << std::format("{}LITERAL({})\n", padding, std::get<double>(lit.value));
+        }
+        else
+        {
+            std::cout << std::format("{}LITERAL({})\n", padding, std::get<std::string>(lit.value));
+        }
+    }
+    case ASTNodeType::Binary:
+    {
+        const auto &binary_op = std::get<BinaryOperation>(node->node);
+        binary_op
+    }
+    default:
+        return;
+    }
 }
 
 int main()
 {
-    std::vector<Token> tokens = tokenize("INDIRECT(\"A1\"):B2>=5");
+    std::vector<Token> tokens = tokenize("5&\"Hello\"");
     for (int i = 0; i < tokens.size(); i++)
     {
         std::cout << tokens[i].token_type_string << " " << tokens[i].token << "\n";
     }
+    Parser parser(tokens);
+    ASTNode root = parser.parse();
+    print_ast(&root, 0);
+
     return 0;
 }
