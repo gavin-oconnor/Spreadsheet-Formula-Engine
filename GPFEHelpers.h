@@ -2,8 +2,9 @@
 #define GPFE_HELPERS_H
 
 #include <string>
+#include "GPFETypes.h"
 
-int colLetterToNumber(const std::string &col)
+inline int colLetterToNumber(const std::string &col)
 {
     int result = 0;
     for (char c : col)
@@ -15,6 +16,54 @@ int colLetterToNumber(const std::string &col)
         result = result * 26 + digit;
     }
     return result;
+}
+
+inline std::string BinaryOpToString(BinaryOp op)
+{
+    switch (op)
+    {
+    case BinaryOp::Pow:
+        return "POW";
+    case BinaryOp::Mul:
+        return "MUL";
+    case BinaryOp::Div:
+        return "DIV";
+    case BinaryOp::Add:
+        return "ADD";
+    case BinaryOp::Sub:
+        return "SUB";
+    case BinaryOp::Concat:
+        return "CONCAT";
+    case BinaryOp::Eq:
+        return "EQUAL";
+    case BinaryOp::Neq:
+        return "NOT EQUAL";
+    case BinaryOp::Less:
+        return "LESS THAN";
+    case BinaryOp::Greater:
+        return "GREATER THAN";
+    case BinaryOp::Geq:
+        return "GREATER THAN EQUAL";
+    case BinaryOp::Leq:
+        return "LESS THAN EQUAL";
+    case BinaryOp::Range:
+        return "RANGE";
+    }
+    return "";
+}
+
+inline std::string UnaryOpToString(UnaryOp op)
+{
+    switch (op)
+    {
+    case UnaryOp::Plus:
+        return "PLUS";
+    case UnaryOp::Minus:
+        return "MINUS";
+    case UnaryOp::Percent:
+        return "PERCENT";
+    }
+    return "";
 }
 
 #endif

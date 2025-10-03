@@ -9,6 +9,7 @@
 #include "GPFETypes.h"
 #include "Parser.h"
 #include <format>
+#include "GPFEHelpers.h"
 
 // need literal, function call, operator, reference
 
@@ -416,11 +417,42 @@ void print_ast(ASTNode *node, int indent)
         {
             std::cout << std::format("{}LITERAL({})\n", padding, std::get<std::string>(lit.value));
         }
+        return;
     }
     case ASTNodeType::Binary:
     {
         const auto &binary_op = std::get<BinaryOperation>(node->node);
-        binary_op
+        std::cout << std::format("{}OPERATOR({})\n", padding, BinaryOpToString(binary_op.op));
+        print_ast(binary_op.left.get(), 2);
+        print_ast(binary_op.right.get(), 2);
+        return;
+    }
+    case ASTNodeType::Unary:
+    {
+        const auto &unary_op = std::get<UnaryOperation>(node->node);
+        std::cout << std::format("{}OPERATOR({})\n", padding, UnaryOpToString(unary_op.op));
+        print_ast(unary_op.operand.get(), 2);
+        return;
+    }
+    case ASTNodeType::FunctionCall:
+    {
+        const auto &function_call = std::get<FunctionCall>(node->node);
+        std::cout << std::format("{}FUNCTION({})\n", padding, function_call.identifier);
+        for (int i = 0; i < function_call.args.size(); i++)
+        {
+            print_ast(function_call.args[i].get(), 2);
+        }
+        return;
+    }
+    case ASTNodeType::Reference:
+    {
+        const auto &reference = std::get<Reference>(node->node);
+        if (reference.type == ReferenceType::Cell)
+        {
+            const auto &cell_ref = std::get<CellReference>(reference.ref);
+            std::cout << std::format("{}REFERENCE({},{})\n", padding, cell_ref.row, cell_ref.col);
+        }
+        return;
     }
     default:
         return;
