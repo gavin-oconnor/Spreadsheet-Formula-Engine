@@ -112,6 +112,10 @@ ASTNode Parser::nud(const Token &token)
 
         FunctionCall call;
         call.identifier = token.token;
+        for (char &c : call.identifier)
+        {
+            c = std::toupper(static_cast<unsigned char>(c));
+        }
 
         if (peek().type != RPAREN_TOKEN)
         {

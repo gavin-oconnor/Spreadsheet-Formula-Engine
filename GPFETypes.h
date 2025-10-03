@@ -6,6 +6,28 @@
 #include <memory>
 #include <variant>
 
+struct Span
+{
+    int start;
+    int end;
+};
+
+enum class BaseType
+{
+    Number,
+    Bool,
+    String,
+    CellRef,
+    Range,
+    Unknown,
+    Error
+};
+
+struct TypeInfo
+{
+    BaseType type;
+};
+
 enum TOKEN_TYPE
 {
     REFERENCE_TOKEN,
@@ -130,6 +152,7 @@ struct ASTNode
 {
     ASTNodeType type;
     std::variant<Literal, Reference, UnaryOperation, BinaryOperation, FunctionCall> node;
+    TypeInfo inferredType;
 };
 
 struct Token
@@ -137,6 +160,7 @@ struct Token
     TOKEN_TYPE type;
     std::string token_type_string;
     std::string token;
+    Span span;
 };
 
 #endif
