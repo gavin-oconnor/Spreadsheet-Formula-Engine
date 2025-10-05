@@ -152,7 +152,7 @@ struct ASTNode
 {
     ASTNodeType type;
     std::variant<Literal, Reference, UnaryOperation, BinaryOperation, FunctionCall> node;
-    TypeInfo inferredType;
+    TypeInfo inferredType = {BaseType::Unknown};
 };
 
 struct Token

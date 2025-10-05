@@ -66,4 +66,27 @@ inline std::string UnaryOpToString(UnaryOp op)
     return "";
 }
 
+inline std::string BaseTypeToString(BaseType base_type)
+{
+    switch (base_type)
+    {
+    case BaseType::Bool:
+        return "BOOL";
+    case BaseType::CellRef:
+        return "CellRef";
+    case BaseType::Error:
+        return "Error";
+    case BaseType::Number:
+        return "Number";
+    case BaseType::Range:
+        return "Range";
+    case BaseType::String:
+        return "String";
+    case BaseType::Unknown:
+        return "Unknown";
+    default:
+        return "UNIDENTIFIED TYPE";
+    }
+}
+
 #endif

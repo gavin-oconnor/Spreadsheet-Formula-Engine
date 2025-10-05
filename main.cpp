@@ -11,6 +11,8 @@
 #include "Lexer.h"
 #include <format>
 #include "GPFEHelpers.h"
+#include "TypeChecker.h"
+#include "Evaluator.h"
 
 // need literal, function call, operator, reference
 
@@ -48,18 +50,18 @@ void print_ast(ASTNode *node, int indent)
         const auto &lit = std::get<Literal>(node->node);
         if (lit.type == LiteralType::Numeric)
         {
-            std::cout << std::format("{}LITERAL({})\n", padding, std::get<double>(lit.value));
+            std::cout << std::format("{}LITERAL({}): {}\n", padding, std::get<double>(lit.value), BaseTypeToString(node->inferredType.type));
         }
         else
         {
-            std::cout << std::format("{}LITERAL({})\n", padding, std::get<std::string>(lit.value));
+            std::cout << std::format("{}LITERAL({}): {}\n", padding, std::get<std::string>(lit.value), BaseTypeToString(node->inferredType.type));
         }
         return;
     }
     case ASTNodeType::Binary:
     {
         const auto &binary_op = std::get<BinaryOperation>(node->node);
-        std::cout << std::format("{}OPERATOR({})\n", padding, BinaryOpToString(binary_op.op));
+        std::cout << std::format("{}OPERATOR({}): {}\n", padding, BinaryOpToString(binary_op.op), BaseTypeToString(node->inferredType.type));
         print_ast(binary_op.left.get(), 2);
         print_ast(binary_op.right.get(), 2);
         return;
@@ -67,14 +69,14 @@ void print_ast(ASTNode *node, int indent)
     case ASTNodeType::Unary:
     {
         const auto &unary_op = std::get<UnaryOperation>(node->node);
-        std::cout << std::format("{}OPERATOR({})\n", padding, UnaryOpToString(unary_op.op));
+        std::cout << std::format("{}OPERATOR({}): {}\n", padding, UnaryOpToString(unary_op.op), BaseTypeToString(node->inferredType.type));
         print_ast(unary_op.operand.get(), 2);
         return;
     }
     case ASTNodeType::FunctionCall:
     {
         const auto &function_call = std::get<FunctionCall>(node->node);
-        std::cout << std::format("{}FUNCTION({})\n", padding, function_call.identifier);
+        std::cout << std::format("{}FUNCTION({}): {}\n", padding, function_call.identifier, BaseTypeToString(node->inferredType.type));
         for (int i = 0; i < function_call.args.size(); i++)
         {
             print_ast(function_call.args[i].get(), 2);
@@ -87,7 +89,7 @@ void print_ast(ASTNode *node, int indent)
         if (reference.type == ReferenceType::Cell)
         {
             const auto &cell_ref = std::get<CellReference>(reference.ref);
-            std::cout << std::format("{}REFERENCE({},{})\n", padding, cell_ref.row, cell_ref.col);
+            std::cout << std::format("{}REFERENCE({},{}): {}\n", padding, cell_ref.row, cell_ref.col, BaseTypeToString(node->inferredType.type));
         }
         return;
     }
@@ -98,7 +100,7 @@ void print_ast(ASTNode *node, int indent)
 
 int main()
 {
-    Lexer lexer("\"HELLO\"");
+    Lexer lexer("-5%");
     std::vector<Token> tokens = lexer.tokenize();
     for (int i = 0; i < tokens.size(); i++)
     {
@@ -106,7 +108,18 @@ int main()
     }
     Parser parser(tokens);
     ASTNode root = parser.parse();
+    TypeChecker type_checker;
+    type_checker.infer(&root);
     print_ast(&root, 0);
-
+    Evaluator evaluator;
+    using RC = std::pair<int, int>;
+    using Value = std::variant<Number, Bool, Text, RangeRef, Error>;
+    std::map<RC, Value> cell_map;
+    Value evaluated_expr = evaluator.evaluateNode(&root, cell_map);
+    if (std::holds_alternative<double>(evaluated_expr))
+    {
+        double returned_value = std::get<double>(evaluated_expr);
+        std::cout << returned_value << "\n";
+    }
     return 0;
 }

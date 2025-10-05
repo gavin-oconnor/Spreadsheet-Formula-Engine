@@ -5,8 +5,7 @@
 #include "FunctionRegistry.h"
 #include <unordered_map>
 #include <string>
-
-std::unordered_map<std::string, FunctionSignature> functions;
+#include <iostream>
 
 auto valid_numeric_operand = [](const TypeInfo &type)
 {
@@ -164,13 +163,78 @@ public:
         }
         case ASTNodeType::FunctionCall:
         {
-            const auto &function_call = std::get<FunctionCall>(node->node);
-            if (functions.find(function_call.identifier) == functions.end())
+            const auto &call = std::get<FunctionCall>(node->node);
+            const auto *sig = funcs::lookup(call.identifier);
+            if (!sig)
             {
+                // diags.error(call.identifier span, "Unknown function");
                 node->inferredType = {BaseType::Error};
                 return node->inferredType;
             }
-            throw std::runtime_error("FUNCTION TYPE CHECKING NOT IMPLEMENTED");
+
+            if (sig->variableArity)
+            {
+                // require at least one Param (the tail spec)
+                if (sig->params.empty())
+                {
+                    // diags.error(node->span, "Internal: variadic signature missing tail param");
+                    node->inferredType = {BaseType::Error};
+                    return node->inferredType;
+                }
+
+                const size_t fixed = sig->params.size() - 1; // 0..N fixed, last is tail
+                if (call.args.size() < fixed)
+                {
+                    // diags.error(node->span, "Too few arguments to " + sig->name);
+                    node->inferredType = {BaseType::Error};
+                    return node->inferredType;
+                }
+                // fixed
+                for (size_t i = 0; i < fixed; ++i)
+                {
+                    auto ti = infer(call.args[i].get());
+                    if (!funcs::matchesParam(sig->params[i], ti.type))
+                    {
+                        // diags.error(call.args[i]->span, "Arg " + std::to_string(i+1) + " has incompatible type");
+                        node->inferredType = {BaseType::Error};
+                        return node->inferredType;
+                    }
+                }
+                // vararg tail
+                const auto &tail = sig->params.back();
+                for (size_t i = fixed; i < call.args.size(); ++i)
+                {
+                    auto ti = infer(call.args[i].get());
+                    if (!funcs::matchesParam(tail, ti.type))
+                    {
+                        // diags.error(call.args[i]->span, "Arg " + std::to_string(i+1) + " has incompatible type");
+                        node->inferredType = {BaseType::Error};
+                        return node->inferredType;
+                    }
+                }
+            }
+            else
+            {
+                if (sig->params.size() != call.args.size())
+                {
+                    // diags.error(node->span, "Wrong number of arguments to " + sig->name);
+                    node->inferredType = {BaseType::Error};
+                    return node->inferredType;
+                }
+                for (size_t i = 0; i < call.args.size(); ++i)
+                {
+                    auto ti = infer(call.args[i].get());
+                    if (!funcs::matchesParam(sig->params[i], ti.type))
+                    {
+                        // diags.error(call.args[i]->span, "Arg " + std::to_string(i+1) + " has incompatible type");
+                        node->inferredType = {BaseType::Error};
+                        return node->inferredType;
+                    }
+                }
+            }
+
+            node->inferredType = {sig->returnType};
+            return node->inferredType;
         }
         }
     }

@@ -1,25 +1,32 @@
 #include "FunctionRegistry.h"
 #include <unordered_map>
 
-const FunctionSignature SUM_SIG{
-    "SUM",
-    {Param{{ArgKind::Number, ArgKind::Ref, ArgKind::Range}}}, // tail spec
-    /*variableArity=*/true,
-    BaseType::Number};
+namespace funcs
+{
 
-// LEN(text) -> number
-const FunctionSignature LEN_SIG{
-    "LEN",
-    {Param{{ArgKind::Text}}},
-    false,
-    BaseType::Number};
+    static const std::unordered_map<std::string, FunctionSignature> &table()
+    {
+        static const std::unordered_map<std::string, FunctionSignature> k = {
+            // SUM: variadic; each arg can be Number, Ref (cell), or Range
+            {"SUM", FunctionSignature{
+                        "SUM",
+                        {Param{{ArgKind::Number, ArgKind::Ref, ArgKind::Range}}}, // tail spec
+                        /*variableArity=*/true,
+                        BaseType::Number}},
+            // LEN(text) -> number
+            {"LEN", FunctionSignature{"LEN", {Param{{ArgKind::Text}}}, false, BaseType::Number}},
+            // IF(bool, any, any) -> (return type refined later)
+            {"IF", FunctionSignature{"IF", {Param{{ArgKind::Bool}}, Param{{ArgKind::AnyScalar}}, Param{{ArgKind::AnyScalar}}}, false, BaseType::Unknown}},
+        };
+        return k;
+    }
 
-// IF(bool, any, any) -> best-effort (you can refine return type later)
-const FunctionSignature IF_SIG{
-    "IF",
-    {Param{{ArgKind::Bool}}, Param{{ArgKind::AnyScalar}}, Param{{ArgKind::AnyScalar}}},
-    false,
-    BaseType::Unknown};
+    const FunctionSignature *lookup(std::string_view name)
+    {
+        const auto &k = table();
+        if (auto it = k.find(std::string(name)); it != k.end())
+            return &it->second;
+        return nullptr;
+    }
 
-static const std::unordered_map<std::string, FunctionSignature> functions = {
-    {"SUM", SUM_SIG}, {"LEN", LEN_SIG}, {"IF", IF_SIG}};
+} // namespace funcs

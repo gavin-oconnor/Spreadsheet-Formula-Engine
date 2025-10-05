@@ -1,4 +1,5 @@
 #include "Lexer.h"
+#include <iostream>
 
 std::vector<Token> Lexer::tokenize()
 {
@@ -104,13 +105,7 @@ std::vector<Token> Lexer::tokenize()
                     if (i < input_.size())
                     {
                         // either end of string or valid following character
-                        if (i == input_.size() - 1)
-                        {
-                            tokens.push_back({NUMBER_TOKEN, "NUMBER", value, {start, i}});
-                            token_pushed = true;
-                            break;
-                        }
-                        else if (lexemes::valid_after_number.find(input_[i]) != std::string::npos)
+                        if (lexemes::valid_after_number.find(input_[i]) != std::string::npos)
                         {
                             tokens.push_back({NUMBER_TOKEN, "NUMBER", value, {start, i - 1}});
                             token_pushed = true;
