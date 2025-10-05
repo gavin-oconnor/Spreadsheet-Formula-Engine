@@ -17,6 +17,11 @@ auto is_error = [](const TypeInfo &type)
     return type.type == BaseType::Error;
 };
 
+auto is_range = [](const TypeInfo &type)
+{
+    return type.type == BaseType::Range;
+};
+
 auto valid_range_operand = [](const TypeInfo &type)
 {
     return (type.type == BaseType::CellRef || type.type == BaseType::Unknown);
@@ -119,7 +124,7 @@ public:
             }
             case BinaryOp::Concat:
             {
-                if (is_error(left_type_info) || is_error(right_type_info))
+                if (is_error(left_type_info) || is_error(right_type_info) || is_range(left_type_info) || is_range(right_type_info))
                 {
                     node->inferredType = {BaseType::Error};
                     return node->inferredType;

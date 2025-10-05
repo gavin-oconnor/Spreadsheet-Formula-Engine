@@ -100,7 +100,7 @@ void print_ast(ASTNode *node, int indent)
 
 int main()
 {
-    Lexer lexer("-5%");
+    Lexer lexer("5&5+10");
     std::vector<Token> tokens = lexer.tokenize();
     for (int i = 0; i < tokens.size(); i++)
     {
@@ -120,6 +120,17 @@ int main()
     {
         double returned_value = std::get<double>(evaluated_expr);
         std::cout << returned_value << "\n";
+    }
+    if (std::holds_alternative<bool>(evaluated_expr))
+    {
+        if (std::get<bool>(evaluated_expr))
+            std::cout << "TRUE\n";
+        else
+            std::cout << "FALSE\n";
+    }
+    if (std::holds_alternative<std::string>(evaluated_expr))
+    {
+        std::cout << std::get<std::string>(evaluated_expr) << "\n";
     }
     return 0;
 }

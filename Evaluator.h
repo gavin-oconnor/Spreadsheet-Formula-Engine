@@ -8,6 +8,7 @@ enum class ErrorCode
     Div0,
     Ref,
     Name,
+    Num,
     Cycle,
     NA
 };

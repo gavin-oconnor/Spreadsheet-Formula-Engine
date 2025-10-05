@@ -7,7 +7,7 @@
 
 namespace lexemes
 {
-    constexpr std::string_view valid_after_number = ",)+-/*^%&";
+    constexpr std::string_view valid_after_number = ",)+-/*^%&<>=";
     constexpr std::string_view valid_after_indentifier = ",()+-/*^:";
     constexpr std::string_view valid_after_reference = ",:)+-/*^>=<";
     constexpr std::string_view operators = "+-/*^:&";

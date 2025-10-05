@@ -129,7 +129,7 @@ std::vector<Token> Lexer::tokenize()
         {
             if (!tokens.size())
                 throw std::runtime_error("CAN'T START EXPRESSION WITH %");
-            if (tokens[tokens.size() - 1].type != LPAREN_TOKEN && tokens[tokens.size() - 1].type != REFERENCE_TOKEN && tokens[tokens.size() - 1].type != NUMBER_TOKEN)
+            if (tokens[tokens.size() - 1].type != LPAREN_TOKEN && tokens[tokens.size() - 1].type != REFERENCE_TOKEN && tokens[tokens.size() - 1].type != NUMBER_TOKEN && tokens[tokens.size() - 1].type != RPAREN_TOKEN)
                 throw std::runtime_error("INCORRECT LEFT OPERAND FOR %");
             tokens.push_back({PERCENT_OPERATOR_TOKEN, "PERCENT OPERATOR", "%", {i, i}});
         }
