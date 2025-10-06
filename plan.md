@@ -9,3 +9,7 @@ r_paren (
 l_paren )
 
 Limitations (self-imposing for now to make this easier)
+
+## Pls Fix's
+
+Blank cells (as scalars) should be some kind of null value that gets handled differently by different operations

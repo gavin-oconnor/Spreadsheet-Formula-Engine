@@ -18,12 +18,18 @@ struct Error
     ErrorCode code;
 };
 
+enum class EvalNeed
+{
+    Scalar,
+    RefLike
+};
+
 using Number = double;
 using Bool = bool;
 using Text = std::string;
 struct RangeRef
 {
-    int r0, c0, r1, c1;
+    int left, right, top, bottom;
 };
 
 using Value = std::variant<Number, Bool, Text, RangeRef, Error>;
@@ -33,5 +39,7 @@ using RC = std::pair<int, int>;
 class Evaluator
 {
 public:
-    Value evaluateNode(const ASTNode *node, std::map<RC, Value> &cell_map);
+    Value evaluateNode(const ASTNode *node, std::map<RC, Value> &cell_map, EvalNeed need);
+    Value evalScalar(const ASTNode *node, std::map<RC, Value> &cell_map);
+    Value evalRefLike(const ASTNode *node, std::map<RC, Value> &cell_map);
 };

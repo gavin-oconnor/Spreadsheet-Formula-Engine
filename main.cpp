@@ -62,15 +62,15 @@ void print_ast(ASTNode *node, int indent)
     {
         const auto &binary_op = std::get<BinaryOperation>(node->node);
         std::cout << std::format("{}OPERATOR({}): {}\n", padding, BinaryOpToString(binary_op.op), BaseTypeToString(node->inferredType.type));
-        print_ast(binary_op.left.get(), 2);
-        print_ast(binary_op.right.get(), 2);
+        print_ast(binary_op.left.get(), padding.size() + 2);
+        print_ast(binary_op.right.get(), padding.size() + 2);
         return;
     }
     case ASTNodeType::Unary:
     {
         const auto &unary_op = std::get<UnaryOperation>(node->node);
         std::cout << std::format("{}OPERATOR({}): {}\n", padding, UnaryOpToString(unary_op.op), BaseTypeToString(node->inferredType.type));
-        print_ast(unary_op.operand.get(), 2);
+        print_ast(unary_op.operand.get(), padding.size() + 2);
         return;
     }
     case ASTNodeType::FunctionCall:
@@ -79,7 +79,7 @@ void print_ast(ASTNode *node, int indent)
         std::cout << std::format("{}FUNCTION({}): {}\n", padding, function_call.identifier, BaseTypeToString(node->inferredType.type));
         for (int i = 0; i < function_call.args.size(); i++)
         {
-            print_ast(function_call.args[i].get(), 2);
+            print_ast(function_call.args[i].get(), padding.size() + 2);
         }
         return;
     }
@@ -100,7 +100,7 @@ void print_ast(ASTNode *node, int indent)
 
 int main()
 {
-    Lexer lexer("5&5+10");
+    Lexer lexer("5&5+10=\"515\"");
     std::vector<Token> tokens = lexer.tokenize();
     for (int i = 0; i < tokens.size(); i++)
     {
