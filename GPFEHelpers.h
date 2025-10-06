@@ -84,6 +84,8 @@ inline std::string BaseTypeToString(BaseType base_type)
         return "String";
     case BaseType::Unknown:
         return "Unknown";
+    case BaseType::Blank:
+        return "Blank";
     default:
         return "UNIDENTIFIED TYPE";
     }

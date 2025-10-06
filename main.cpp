@@ -13,6 +13,7 @@
 #include "GPFEHelpers.h"
 #include "TypeChecker.h"
 #include "Evaluator.h"
+#include "EvalTypes.h"
 
 // need literal, function call, operator, reference
 
@@ -100,7 +101,7 @@ void print_ast(ASTNode *node, int indent)
 
 int main()
 {
-    Lexer lexer("5&5+10=\"515\"");
+    Lexer lexer("IF(5-5=0,0,5)");
     std::vector<Token> tokens = lexer.tokenize();
     for (int i = 0; i < tokens.size(); i++)
     {
@@ -112,10 +113,10 @@ int main()
     type_checker.infer(&root);
     print_ast(&root, 0);
     Evaluator evaluator;
-    using RC = std::pair<int, int>;
-    using Value = std::variant<Number, Bool, Text, RangeRef, Error>;
-    std::map<RC, Value> cell_map;
-    Value evaluated_expr = evaluator.evaluateNode(&root, cell_map);
+    EvalContext evalCtx;
+    evalCtx.cell_map = new std::map<RC, Value>();
+    evalCtx.cell_map->insert(std::make_pair(RC{1, 1}, Number{5}));
+    Value evaluated_expr = evaluator.evaluateNode(&root, EvalNeed::Scalar, evalCtx);
     if (std::holds_alternative<double>(evaluated_expr))
     {
         double returned_value = std::get<double>(evaluated_expr);

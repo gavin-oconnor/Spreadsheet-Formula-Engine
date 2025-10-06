@@ -20,7 +20,8 @@ enum class BaseType
     CellRef,
     Range,
     Unknown,
-    Error
+    Error,
+    Blank
 };
 
 struct TypeInfo

@@ -13,3 +13,5 @@ Limitations (self-imposing for now to make this easier)
 ## Pls Fix's
 
 Blank cells (as scalars) should be some kind of null value that gets handled differently by different operations
+Bounds checking needed in evaluating cell reference as scalar
+FUNCTION TYPE COERCION (EX: LEN(5.0) = 3)

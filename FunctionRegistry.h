@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include "GPFETypes.h"
+#include "EvalTypes.h"
 
 namespace funcs
 {
@@ -66,12 +67,15 @@ namespace funcs
         return false;
     }
 
+    using EvalFn = Value (*)(const std::vector<Value> &, EvalContext &evalCtx);
+
     struct FunctionSignature
     {
         std::string name;
         std::vector<Param> params;
         bool variableArity;
         BaseType returnType;
+        EvalFn eval_function;
     };
 
     const FunctionSignature *lookup(std::string_view name);
